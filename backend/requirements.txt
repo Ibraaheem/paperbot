@@ -1,0 +1,2 @@
+beautifulsoup4==4.9.1
+httplib2==0.18.1
