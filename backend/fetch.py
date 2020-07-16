@@ -39,8 +39,8 @@ print("languages: \n")
 #     print(nonlang) 
 #     countn += 1
 # print(countn)
-utils.Sorter().sort_by_subject(papers_links, 'https://wcedonline.westerncape.gov.za/november-2018-nsc-examinations')
-
+pap = utils.Sorter().sort_by_subject(papers_links, 'https://wcedonline.westerncape.gov.za/november-2018-nsc-examinations')
+utils.Sorter().sort_by_year(pap)
 
 print("\n\n\n")
 stop = timeit.default_timer()

@@ -6,6 +6,13 @@ import re
 
 class Sorter:
 
+    """
+    sort sequence:
+    - year
+    - language
+    - subject
+    """
+
     def sort_by_language(self, papers):
         languages = []
         non_languages = []
@@ -21,21 +28,22 @@ class Sorter:
         http = httplib2.Http()
         status, response = http.request(url)
         for link in BeautifulSoup(response, parse_only=SoupStrainer('div', attrs={"class": "panel-heading"})):
-            subjects.add(link.string)
+            subjects.add(link.string.replace(' ', '%20'))
         return dict.fromkeys(subjects, [])
 
     def sort_by_subject(self, papers, url):
         subjects = self.get_subjects(url)
+        paper_by_subject = []
         for subject in subjects:
             for paper in papers:
                 if subject in paper:
-                    subjects[subject].append(paper)
-                else:
-                    continue
-        print(subjects['English'])
+                    paper_by_subject.append(paper)
+            subjects[subject] = paper_by_subject
+            paper_by_subject = []
+        return subjects
         
 
-    def sort_by_year(self, papers):
+    def sort_by_year(self, sorted_papers):
         """
         papers_by_year = {
             "2020" : ['link','link','link',],
@@ -44,23 +52,31 @@ class Sorter:
             }
         """
         years = set()
-        for paper in papers:
-            year = re.search(r'[12]\d{3}', paper).group(0)
-            years.add(year)
+        sorted_subject = []
+        languages = []
+        non_languages = []
+        for subject, papers in sorted_papers.items():
+            for paper in papers:
+                year = re.search(r'[12]\d{3}', paper).group(0)
+                years.add(year)
         years = dict.fromkeys(years, '')
 
-        languages, non_languages = self.sort_by_language(papers)
+        for subject, papers in sorted_papers.items():
+            for sub in subject:
+
+                
         
-        for year in years:
-            sorted_languages = []
-            sorted_non_languages = []
-            for lang in languages:
-                if year in lang:
-                    sorted_languages.append(lang)
-            for nlang in non_languages:
-                if year in nlang:
-                    sorted_non_languages.append(nlang)
-            years[year] = [sorted_languages, sorted_non_languages]
+
+        # for year in years:
+        #     sorted_languages = []
+        #     sorted_non_languages = []
+        #     for lang in languages:
+        #         if year in lang:
+        #             sorted_languages.append(lang)
+        #     for nlang in non_languages:
+        #         if year in nlang:
+        #             sorted_non_languages.append(nlang)
+        #     years[year] = [sorted_languages, sorted_non_languages]
         
-        print(years['2016'])
+        # print(years['2016'])
 
