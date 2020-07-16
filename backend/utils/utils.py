@@ -6,77 +6,55 @@ import re
 
 class Sorter:
 
-    """
-    sort sequence:
-    - year
-    - language
-    - subject
-    """
-
-    def sort_by_language(self, papers):
-        languages = []
-        non_languages = []
-        for paper in papers:
-            if 'non-languages' in paper:
-                non_languages.append(paper)
-            else:
-                languages.append(paper)
-        return languages, non_languages
-
-    def get_subjects(self, url):
+    def get_subjects(self, page_links):
         subjects = set()
         http = httplib2.Http()
-        status, response = http.request(url)
-        for link in BeautifulSoup(response, parse_only=SoupStrainer('div', attrs={"class": "panel-heading"})):
-            subjects.add(link.string.replace(' ', '%20'))
+        for page_link in page_links:
+            status, response = http.request(page_link)
+            for link in BeautifulSoup(response, parse_only=SoupStrainer('div', attrs={"class": "panel-heading"})):
+                subjects.add(link.string.replace(' ', '%20'))
         return dict.fromkeys(subjects, [])
 
-    def sort_by_subject(self, papers, url):
-        subjects = self.get_subjects(url)
+    def sort_by_language(self, papers):
+        sorted_languages = []
+        sorted_non_languages = []
+        for paper in papers:
+            if 'non-languages' in paper:
+                sorted_non_languages.append(paper)
+            elif 'non%s20languages' % ('%') in paper:
+                sorted_non_languages.append(paper)
+            else:
+                sorted_languages.append(paper)
+        return sorted_languages, sorted_non_languages
+        
+    def sort_by_subject(self, papers, subjects):
+        sorted_subjects = subjects
         paper_by_subject = []
-        for subject in subjects:
+        for subject in sorted_subjects:
             for paper in papers:
                 if subject in paper:
                     paper_by_subject.append(paper)
-            subjects[subject] = paper_by_subject
+            sorted_subjects[subject] = paper_by_subject
             paper_by_subject = []
-        return subjects
+        return sorted_subjects
         
 
-    def sort_by_year(self, sorted_papers):
-        """
-        papers_by_year = {
-            "2020" : ['link','link','link',],
-            "2019" : ['link','link','link',],
-            ...
-            }
-        """
-        years = set()
-        sorted_subject = []
-        languages = []
-        non_languages = []
-        for subject, papers in sorted_papers.items():
-            for paper in papers:
-                year = re.search(r'[12]\d{3}', paper).group(0)
-                years.add(year)
-        years = dict.fromkeys(years, '')
+    def sort_valid_languages(self, papers, subjects):
+        sorted_languages, sorted_non_languages = self.sort_by_language(papers)
+        sorted_languages = self.sort_by_subject(list(sorted_languages),subjects)
+        sorted_languages = dict( [(k,v) for k,v in sorted_languages.items() if len(v)>0])
+        return sorted_languages
 
-        for subject, papers in sorted_papers.items():
-            for sub in subject:
+    def sort_non_languages(self, papers, subjects):
+        sorted_languages, sorted_non_languages = self.sort_by_language(papers)
+        sorted_non_languages = self.sort_by_subject(list(sorted_non_languages),subjects)
+        sorted_non_languages = dict( [(k,v) for k,v in sorted_non_languages.items() if len(v)>0])
+        return sorted_non_languages
 
-                
+    def get_sorted_papers(self, papers, subjects):
+        languages, non_languages = self.sort_valid_languages(papers, subjects), self.sort_non_languages(papers, subjects)
+        return {
+            'languages': languages,
+            'non_languages': non_languages
+        }
         
-
-        # for year in years:
-        #     sorted_languages = []
-        #     sorted_non_languages = []
-        #     for lang in languages:
-        #         if year in lang:
-        #             sorted_languages.append(lang)
-        #     for nlang in non_languages:
-        #         if year in nlang:
-        #             sorted_non_languages.append(nlang)
-        #     years[year] = [sorted_languages, sorted_non_languages]
-        
-        # print(years['2016'])
-
